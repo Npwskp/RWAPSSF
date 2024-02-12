@@ -44,6 +44,7 @@ contract RPS is CommitReveal {
     }
 
     function revealByUser(uint choice, uint salt) public {
+        require(numInput == 2);
         revealAnswer(bytes32(choice),bytes32(salt));
         player[idx[msg.sender]].choice = choice;
         playerReveal++;
