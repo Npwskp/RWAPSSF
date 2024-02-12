@@ -6,7 +6,7 @@ import "./CommitReveal.sol";
 
 contract RPS is CommitReveal {
     struct Player {
-        uint choice; // 0 - Rock, 1 - Paper , 2 - Scissors, 3 - undefined
+        uint choice; // 0 - Rock, 1 - Water, 2 - Air , 3 - Paper , 4 - Sponge , 5 - Scissor, 6 - Fire
         address addr;
     }
     uint public numPlayer = 0;
@@ -26,7 +26,7 @@ contract RPS is CommitReveal {
     function input(uint choice, uint idx) public  {
         require(numPlayer == 2);
         require(msg.sender == player[idx].addr);
-        require(choice == 0 || choice == 1 || choice == 2);
+        require(choice >= 0 && choice <= 6);
         player[idx].choice = choice;
         numInput++;
         if (numInput == 2) {
@@ -39,11 +39,11 @@ contract RPS is CommitReveal {
         uint p1Choice = player[1].choice;
         address payable account0 = payable(player[0].addr);
         address payable account1 = payable(player[1].addr);
-        if ((p0Choice + 1) % 3 == p1Choice) {
+        if ((p0Choice + 1) % 7 == p1Choice || (p0Choice + 2) % 7 == p1Choice  || (p0Choice + 3) % 7 == p1Choice ) {
             // to pay player[1]
             account1.transfer(reward);
         }
-        else if ((p1Choice + 1) % 3 == p0Choice) {
+        else if ((p1Choice + 1) % 7 == p0Choice || (p1Choice + 2) % 7 == p0Choice || (p1Choice + 3) % 7 == p0Choice) {
             // to pay player[0]
             account0.transfer(reward);    
         }
