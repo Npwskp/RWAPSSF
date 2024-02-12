@@ -6,30 +6,43 @@ import "./CommitReveal.sol";
 
 contract RPS is CommitReveal {
     struct Player {
-        uint choice; // 0 - Rock, 1 - Water, 2 - Air , 3 - Paper , 4 - Sponge , 5 - Scissor, 6 - Fire
+        uint choice; // 0 - Rock, 1 - Water, 2 - Air , 3 - Paper , 4 - Sponge , 5 - Scissor, 6 - Fire, 7 - undefined
         address addr;
     }
+
     uint public numPlayer = 0;
     uint public reward = 0;
-    mapping (uint => Player) public player;
+    mapping (uint => Player) private player;
+    mapping (address => uint) private idx;
     uint public numInput = 0;
+    uint public playerReveal = 0;
 
     function addPlayer() public payable {
         require(numPlayer < 2);
         require(msg.value == 1 ether);
         reward += msg.value;
         player[numPlayer].addr = msg.sender;
-        player[numPlayer].choice = 3;
+        player[numPlayer].choice = 7;
+        idx[msg.sender] = numPlayer;
         numPlayer++;
     }
 
-    function input(uint choice, uint idx) public  {
+    function input(bytes32 choice) public  {
         require(numPlayer == 2);
-        require(msg.sender == player[idx].addr);
-        require(choice >= 0 && choice <= 6);
-        player[idx].choice = choice;
+        commit(choice);
         numInput++;
-        if (numInput == 2) {
+    }
+
+    function hashChoice(uint choice, uint salt) external view returns(bytes32) {
+        require(choice >= 0 && choice <= 6);
+        return getSaltedHash(bytes32(choice),bytes32(salt));
+    }
+
+    function revealByUser(uint choice, uint salt) public {
+        revealAnswer(bytes32(choice),bytes32(salt));
+        player[idx[msg.sender]].choice = choice;
+        playerReveal++;
+        if(playerReveal == 2){
             _checkWinnerAndPay();
         }
     }
