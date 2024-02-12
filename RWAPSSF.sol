@@ -12,10 +12,11 @@ contract RPS is CommitReveal {
 
     uint public numPlayer = 0;
     uint public reward = 0;
-    mapping (uint => Player) private player;
+    mapping (uint => Player) public player;
     mapping (address => uint) private idx;
     uint public numInput = 0;
     uint public playerReveal = 0;
+    uint public startTime = 0;
 
     function addPlayer() public payable {
         require(numPlayer < 2);
@@ -24,6 +25,9 @@ contract RPS is CommitReveal {
         player[numPlayer].addr = msg.sender;
         player[numPlayer].choice = 7;
         idx[msg.sender] = numPlayer;
+        if(numPlayer == 0){
+            startTime = block.timestamp;
+        }
         numPlayer++;
     }
 
@@ -34,6 +38,7 @@ contract RPS is CommitReveal {
     }
 
     function hashChoice(uint choice, uint salt) external view returns(bytes32) {
+        // user hash thier choice and put in input
         require(choice >= 0 && choice <= 6);
         return getSaltedHash(bytes32(choice),bytes32(salt));
     }
@@ -44,6 +49,41 @@ contract RPS is CommitReveal {
         playerReveal++;
         if(playerReveal == 2){
             _checkWinnerAndPay();
+        }
+    }
+
+    function checkStatus() public {
+        if(block.timestamp > startTime + 1 days){
+            //check 1 day
+            _handleOvertime();
+        }
+    } 
+
+    function _handleOvertime() private {
+        if(numPlayer == 1){
+            // in case only 1 player
+            address payable account0 = payable(player[0].addr);
+            account0.transfer(reward);
+        }
+        else if (numPlayer == 2){
+            // only punish who is not reveal
+            uint p0Choice = player[0].choice;
+            uint p1Choice = player[1].choice;
+            address payable account0 = payable(player[0].addr);
+            address payable account1 = payable(player[1].addr);
+
+            //transfer reward to those who already reveal
+            if(p0Choice == 7 && p1Choice != 7 && playerReveal < 2){
+                account1.transfer(reward);
+            }
+            else if(p0Choice != 7 && p1Choice == 7 && playerReveal < 2){
+                account0.transfer(reward);
+            }
+            else {
+                // in case that both are not reveal or only 1 person commit
+                account0.transfer(reward / 2);
+                account1.transfer(reward / 2);
+            }
         }
     }
 
